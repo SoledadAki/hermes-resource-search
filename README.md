@@ -45,11 +45,15 @@ how reliable they are in practice.
 hermes skills install https://raw.githubusercontent.com/SoledadAki/hermes-resource-search/main/skills/hermes-resource-search/SKILL.md --yes
 
 # pinned to a release tag
-hermes skills install https://raw.githubusercontent.com/SoledadAki/hermes-resource-search/v1.1.0/skills/hermes-resource-search/SKILL.md --yes
+hermes skills install https://raw.githubusercontent.com/SoledadAki/hermes-resource-search/v1.1.1/skills/hermes-resource-search/SKILL.md --yes
 ```
 
 One HTTP fetch plus the referenced support files. No GitHub account or token needed.
 Verified: scan verdict `SAFE`, install allowed without `--force`.
+
+If the fetch fails with `Could not fetch … from any source` plus a GitHub API rate-limit
+hint, the anonymous API quota (60 requests/hour per IP) is exhausted — set `GITHUB_TOKEN`
+in Hermes' `.env` and retry. A rate-limited install looks exactly like a broken repo.
 
 Hermes skills are plain files fetched from git at install time — there is no package to
 publish and no release asset involved. A tag is only useful for pinning a version; installs
