@@ -135,8 +135,7 @@ raw byte count as KB (a common misread; 12.2 GB arrives as `13099650048`).
   not a keyword problem.
 - **Known holes**: don't rotate keywords trying to force a hit. mikan/nyaa are anime-only;
   tpb does not index CJK titles; xl720 sometimes has a 连载 page with no magnet at all (the
-  script then reports the page URL and says so explicitly). 综艺/体育/纪录片/网盘资源 are out
-  of scope entirely.
+  script then reports the page URL and says so explicitly).
 
 ## 维护：覆盖结论会过期，复述前先复测
 

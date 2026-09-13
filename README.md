@@ -178,7 +178,6 @@ Chinese-language TV/film all resolve; the boundaries are:
 | 日剧 / 日系流媒体真人剧 | garden (`日剧` type) | 魔星字幕团 / 猪猪 / 东京不够热 feed it weekly |
 | 欧美剧 / 欧美电影 | tpb, eztv | season packs, 4K remuxes, per-episode releases with seed counts |
 | 国产剧 / 华语电影 / 港台剧 / 日韩剧 | xl720 | the only source here with a real Chinese-language catalog |
-| 综艺 / 体育 / 纪录片 / 网盘资源 | — | out of scope |
 
 Known holes, so you don't burn requests on them: `mikan` and `nyaa` are anime-only (nyaa's
 live-action categories return zero items); garden's dmhy mirror carries almost nothing for
