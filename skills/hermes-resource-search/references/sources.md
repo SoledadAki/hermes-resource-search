@@ -130,3 +130,108 @@ recommending.
   sources — a dead source never aborts the run.
 - `--json` output includes an `errors` array, which is how you tell "no such release" apart
   from "source unreachable".
+
+## 4. TPB via apibay (live action)
+
+```
+GET https://apibay.org/q.php?q=<query>&cat=<id>
+```
+
+Free JSON mirror of The Pirate Bay's search. No key, no Cloudflare, works direct from a
+mainland connection (verified 2026-09-13). Returns a JSON **array**.
+
+| Param | Notes |
+|---|---|
+| `q` | Full-text query. Whitespace-separated terms are ANDed. Latin script only in practice. |
+| `cat` | `200` all video (script default), `201` movies, `205` TV shows. |
+
+Per record: `id`, `name` (HTML entities possible — `&middot;`), `info_hash` (40-char hex →
+wrap as `magnet:?xt=urn:btih:<hash>`), `size` (bytes), `seeders`, `leechers`, `added`
+(unix), `category`, `imdb` (present for many film/TV rows), `num_files`, `username`.
+
+### Verified quirks
+
+- **An unmatched query does not return an empty array.** apibay answers with a *popular
+  uploads* list (a CJK query such as `庆余年` returns a Spider-Man release). A truly
+  nonsense query does return `[{"name": "No results returned", ...}]`. The script therefore
+  filters every row against the query tokens; without that filter, CJK queries look like
+  they matched something.
+- CJK titles are effectively absent from the index: `庆余年`, `Joy of Life`,
+  `权力的游戏` (CJK) all miss, while the English title (`Empresses in the Palace` for 甄嬛传)
+  does hit. Query in English/romaji.
+- No seed count = no way to judge liveness; the script sorts by seeders descending and
+  prints `S:`/`L:` in the record.
+
+## 5. EZTV (Western TV)
+
+```
+GET https://eztvx.to/api/get-torrents?imdb_id=<numeric-id>&limit=<n>&page=1
+```
+
+JSON, no key. Per record: `hash`, `filename`, `title`, `magnet_url` (full magnet with
+trackers), `imdb_id`, `season`, `episode`, `seeds`, `peers`, `size_bytes`,
+`date_released_unix`, screenshot URLs.
+
+### Verified quirks
+
+- **`imdb_id` must not carry the `tt` prefix.** `imdb_id=tt0944947` is silently ignored and
+  the API returns its entire archive (`torrents_count: 1081897`); `imdb_id=0944947` returns
+  the 146 Game of Thrones rows. The script strips `tt` defensively.
+- **The id lookup itself is unreliable and must be verified.** `imdb_id=0903747`
+  (Breaking Bad) returns 77 rows of *Breaking Brad*, a different show. Always filter the
+  returned rows against the expected series title — the script resolves the title through
+  IMDb's suggestion endpoint and checks every row against it.
+- There is **no title/`search` parameter**: `?search=…` and `?query=…` are ignored and dump
+  the full archive. Title → id must come from somewhere else (IMDb suggestion, below).
+- Magnet URIs include a `dn=` and a 7-tracker list (~500 chars). The script reports the
+  compact `magnet:?xt=urn:btih:<hash>` form and keeps the full URI in `link_full` (visible
+  in `--json`).
+- Live-action categories only exist as this API; the site's HTML search returns 403 to
+  scripted clients.
+
+## 6. IMDb suggestion (title → id bridge)
+
+```
+GET https://v3.sg.media-imdb.com/suggestion/x/<url-encoded-title>.json
+```
+
+Public autocomplete endpoint, no key. Each entry: `id` (`tt…` / `nm…`), `l` (title),
+`qid` (`tvSeries`, `tvMiniSeries`, `movie`, `podcastSeries`, …), `y` (year), `s` (cast),
+`rank`. The script takes the first `tt` entry whose `qid` is a series — that pair (numeric
+id + canonical title) is what makes the eztv source usable and self-verifying.
+
+## 7. xl720 迅雷电影天堂 (Chinese-language film/TV)
+
+WordPress-based Chinese index: films plus 大陆剧 / 港台剧 / 日韩剧 / 欧美剧 / 连载动漫.
+HTML only — no API. Reachable direct from a mainland connection; browser UA required.
+
+```
+GET https://www.xl720.com/?s=<url-encoded-title>     # search page
+GET https://www.xl720.com/thunder/<id>.html          # detail page (magnets)
+```
+
+- Search results are `<a href="…/thunder/<id>.html">title</a>` pairs. The title carries the
+  useful metadata: `2024年国产大陆电视剧 庆余年 第二季全36集`, `2016年美国经典动作片…蓝光国英双语中英双字修正版`.
+- Detail page holds `<div id="zdownload">` with the magnet(s), plus an info block carrying
+  `发布：2016-11-17`, `文件大小　3874 MB` and `集数`. Both the date and the size use
+  single-digit months/days sometimes (`发布：2020-9-22`) — the regex must allow 1–2 digits.
+- **Search is fuzzy and returns unrelated titles** (a `House of the Dragon` query returns a
+  2021 Korean drama), so rows are token-filtered client-side. Searching the localized Chinese
+  title works best; an English query returns Chinese-titled posts that the token filter then
+  drops.
+- A series post carries **one magnet per episode** (庆余年 S1 = 92 magnets, i.e. 2 per episode
+  for multiple encodings). The script reports the first magnet and the total count.
+- Some 连载 posts have **no magnet at all** (e.g. 半泽直树2, id 43418) — the record then
+  falls back to the detail-page URL and the report says so explicitly. Don't treat a page
+  link as a downloadable release.
+
+## Dead ends (checked 2026-09-13, do not retry)
+
+Chinese magnet-search sites are the natural place to look for 国产剧 sources, and every one
+tested was unreachable from this network: `subo.cc`, `cilisou.cn`, `btsow.pics`,
+`cilimao.at`, `pianyuan.org`, `duckduckgo`-style aggregators. Also dead or unusable:
+`yts.mx` API (connection refused), `1337x.to` (Cloudflare 403), `magnetdl.com` /
+`solidtorrents.to` (522), `torrentgalaxy.to` (timeout), `knaben.eu` API (empty response),
+`kisssub.org` (JS challenge), `acg.rip` search (404 on the documented path), `dygod.net`
+search (EmpireCMS POST returns an error page). Only xl720 and apibay answered.
+
