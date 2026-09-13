@@ -225,8 +225,12 @@ sources.
 
 - `references/sources.md` — raw API details, parameters, verified quirks per source.
 - `references/strict-model-compatibility.md` — the GPT-family test matrix and findings.
-- `references/bleach-resources.md` — local-only notes (known-good magnets, canon episode
-  filter list). Personal reference material, not part of the published skill.
+
+Personal notes (known-good magnets, canon episode filter lists) live in a loose
+`hermes-resource-search-local-notes.md` next to this skill's directory — deliberately **not**
+part of the skill, so URL installs never try to fetch a file the public repo doesn't have.
+Keep every mention in this section pointing at a file the repo actually ships: the installer
+enumerates support-file paths from this file, and a single 404 aborts the whole install.
 
 ## 中文速查
 
